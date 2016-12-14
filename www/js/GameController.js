@@ -1,5 +1,5 @@
 // TO DO LIST:
-// finish 3.2 functions
+// build testing function to test discardCards()
 // finish 3.3
 // finish 4.0 game loop
 //at that point create front end render
@@ -18,6 +18,7 @@
   // 3.3 Playable cards/hand functions
 // 4.0 Gamesetup and loop functions
 // 5.0 Game start
+// 6.0 Dev automated testing functions
 
 // BEGIN 1.0 Object to store all universal game variables
   var gameVariables = {
@@ -242,7 +243,7 @@
       var aett1 = [fehu,uruz,thurisaz,ansuz,radio,kenaz,gebo,wunjo]
       var aett2 = [hagalaz,nauthiz,isa,jera,eihwaz,pertho,algiz,sowilo]
       var aett3 = [tiwaz,birkano,ehwaz,mannaz,lagaz,ingwaz,dagaz,othala]
-      //add third aett
+      // 3x aett1, 2x aett2, 1x aett3
       var deck = [aett1,aett1,aett1,aett2,aett2,aett3]
       //Flatten the deck to one dimension
       deck = [].concat.apply([], deck)
@@ -263,8 +264,8 @@
   // END 3.1
 
   // BEGIN 3.2 Card drawing and discarding functions
-    // Callable for hand modification: drawCards, drawHand, discardCards, discardHand. ALL return [hand,deck]
-    // Callable as a precursor: selectRandomCardsInHand
+    // Callable for hand modification: drawCards, drawHand, discardCards, discardHand, all return [hand,deck]
+    // Callable as a precursor to hand modification: selectRandomCardsInHand, this returns [cards] within hand
 
     function drawCards(numberOfCards,hand,deck){
       console.log('drawing X cards: ',numberOfCards)
@@ -296,21 +297,23 @@
     }
 
     function discardCards(cards,hand,deck){
-      //remove specified cards from hand, question regarding how this will work if duplicate runes held in hand
-
-      //for each card to delete iterate backwards through the hand from highest index position, if card to delete == card in hand index position, splice that card off and move onto next card to delete and decrease highest index position tracker by 1
-      //shuffle cards before placing them on bottom of deck
-
+      //First shuffle the cards to be discarded before placing them on bottom of deck
+      cards = shuffleCards(cards)
+      var upperIndexBound = hand.length - 1
+      //Then go through each card to be discarded
+      for (var i = 0; i<cards.length; i++){
+        //And check to see if this card appears in the hand
+        for (var j = 0; i < upperIndexBound; j++){
+          if (cards[i] == hand[j]){
+            //If card is found remove card from hand and add to bottom of the deck
+            deck.push(hand.splice(j,1)[0])
+            upperIndexBound --
+            break
+          }
+        }
+      }
       return [hand,deck]
     }
-
-    //BUILD discardCards testing function
-    //to test
-    //reinit p1 hand, print out names of p1Hand
-    //select a number of cards to delete, print out names of cards to delete
-    //check those and only those were deleted by printing out names of cards remaining in hand
-    //need to check when multiple of same cards are in hand
-    //and above AND multiple of same cards to be deleted
 
     //Only to be called when discarding entire hand
     function discardHand(hand,deck){
@@ -353,7 +356,7 @@
     console.log('this is now the deck: ',p1Deck)
     var p1HandAndDeck = drawHand(p1Deck)
     window.p1Hand = p1HandAndDeck[0]
-    var p1Deck = p1HandAndDeck[1]
+    window.p1Deck = p1HandAndDeck[1]
     var p1PlacedRunes = [
       [0,0,0,0,0,0,0,0], //first aett
       [0,0,0,0,0,0,0,0], //second aett
@@ -377,3 +380,14 @@
 // BEGIN 5.0 Game start
   gameInit()
 // END 5.0
+
+// BEGIN 6.0 Dev test functions
+    function devTest_discardCards(){}
+    //BUILD discardCards testing function
+    //to test
+    //reinit p1 hand, print out names of p1Hand
+    //select a number of cards to delete, print out names of cards to delete
+    //check those and only those were deleted by printing out names of cards remaining in hand
+    //need to check when multiple of same cards are in hand
+    //and above AND multiple of same cards to be deleted
+// END 6.0
