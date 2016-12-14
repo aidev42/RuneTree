@@ -5,6 +5,8 @@
 //at that point create front end render
 //essentially create a one player game
 //when do we render hand and items placed on board?
+//all cards (react components) have a state, clickedOn that toggles on/off with click, when On zooms in, when off zooms back out to original position (can be accomplished potentially by using react to add a class, then css/scss to style/animate)
+//want to lock screen in ionic as vertical aligned
 
 
 //SECTION GUIDE
@@ -19,7 +21,7 @@
 
 // BEGIN 1.0 Object to store all universal game variables
   var gameVariables = {
-    handsize: 5
+    handSize: 5
   }
 // END 1.0
 
@@ -245,46 +247,80 @@
       //Flatten the deck to one dimension
       deck = [].concat.apply([], deck)
       //Now shuffle it
-      return shuffleDeck(deck);
+      return shuffleCards(deck);
     }
 
-    function shuffleDeck(deck) {
+    function shuffleCards(cards) {
       // Using Durstenfeld shuffle algorithm
-      for (var i = deck.length - 1; i > 0; i--) {
+      for (var i = cards.length - 1; i > 0; i--) {
           var j = Math.floor(Math.random() * (i + 1));
-          var temp = deck[i];
-          deck[i] = deck[j];
-          deck[j] = temp;
+          var temp = cards[i];
+          cards[i] = cards[j];
+          cards[j] = temp;
       }
-      return deck;
+      return cards;
     }
   // END 3.1
 
   // BEGIN 3.2 Card drawing and discarding functions
+    // Callable for hand modification: drawCards, drawHand, discardCards, discardHand. ALL return [hand,deck]
+    // Callable as a precursor: selectRandomCardsInHand
+
     function drawCards(numberOfCards,hand,deck){
+      console.log('drawing X cards: ',numberOfCards)
+      console.log('the deck is: ',deck)
       for (var i = 0; i < numberOfCards; i++){
         hand.push(deck.splice(0,1)[0])
       }
+      console.log('this is not the hand', hand)
       return [hand,deck]
     }
 
     //Only to be called when hand is empty
     function drawHand(deck){
-      return drawCards(gameVariables.handSize,deck)
+      console.log('about to draw hand, the deck is: ',deck)
+      return drawCards(gameVariables.handSize,[],deck)
     }
 
     //Used to select random cards (usually before they are discarded)
     function selectRandomCardsInHand(numberOfCards,hand){
-
+      var tempHand = hand.slice(0)
+      var selectedCards = []
+      var upperIndexBound = tempHand.length - 1
+      for (var i = 0; i < numberOfCards; i++){
+        var randInt = Math.floor(Math.random() * (upperIndexBound - 0 + 1)) + 0;
+        selectedCards.push(tempHand.splice(randInt,1)[0])
+        upperIndexBound --
+      }
+      return selectedCards
     }
 
     function discardCards(cards,hand,deck){
-      //remove specified cards from
+      //remove specified cards from hand, question regarding how this will work if duplicate runes held in hand
+
+      //for each card to delete iterate backwards through the hand from highest index position, if card to delete == card in hand index position, splice that card off and move onto next card to delete and decrease highest index position tracker by 1
+      //shuffle cards before placing them on bottom of deck
+
+      return [hand,deck]
     }
+
+    //BUILD discardCards testing function
+    //to test
+    //reinit p1 hand, print out names of p1Hand
+    //select a number of cards to delete, print out names of cards to delete
+    //check those and only those were deleted by printing out names of cards remaining in hand
+    //need to check when multiple of same cards are in hand
+    //and above AND multiple of same cards to be deleted
 
     //Only to be called when discarding entire hand
     function discardHand(hand,deck){
-
+      //Shuffle hand before placing on bottom of deck
+      hand = shuffleCards(hand)
+      for (var i = 0; i < hand.length; i++){
+        deck.push(hand[i])
+      }
+      hand = []
+      return [hand,deck]
     }
   // END 3.2
 
@@ -314,8 +350,9 @@
   function gameInit(){
     //Create deck and hand
     var p1Deck = initDeck()
-    var p1HandAndDeck = drawHand(player1Deck)
-    var p1Hand = p1HandAndDeck[0]
+    console.log('this is now the deck: ',p1Deck)
+    var p1HandAndDeck = drawHand(p1Deck)
+    window.p1Hand = p1HandAndDeck[0]
     var p1Deck = p1HandAndDeck[1]
     var p1PlacedRunes = [
       [0,0,0,0,0,0,0,0], //first aett
@@ -327,14 +364,16 @@
 
   function gameLoop(){
     //if no winner begin turn
-    //check if hand is playable
-    //if so select a card to play, play that card and draw a card. Check to update active runes.
-    //If hand was not playable discard whole hand and redraw
+    //player actions decision:
+      //1) invoke active rune ability
+      //2) discard any card from hand and draw a card
+      //3) play a card (if possible), play that card and draw a card. check if played card updates active runes
+      //4) if entire hand is not playable, you may discard entire hand redraw 5 cards
     //check for winner
     //repeat
   }
 // END 4.0
 
 // BEGIN 5.0 Game start
-  //gameInit()
+  gameInit()
 // END 5.0
