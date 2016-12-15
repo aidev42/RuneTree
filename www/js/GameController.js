@@ -1,7 +1,6 @@
 // TO DO LIST:
-// finish 3.3
-// finish 4.0 game loop
-//at that point create front end render
+
+//ready to create a front end render
 //essentially create a one player game
 //when do we render hand and items placed on board?
 //all cards (react components) have a state, clickedOn that toggles on/off with click, when On zooms in, when off zooms back out to original position (can be accomplished potentially by using react to add a class, then css/scss to style/animate)
@@ -15,6 +14,7 @@
   // 3.1 Deck initializing functions
   // 3.2 Card drawing and discarding functions
   // 3.3 Playable cards/hand functions
+  // 3.4 Active Runes functions
 // 4.0 Gamesetup and loop functions
 // 5.0 Game start
 // 6.0 Dev automated testing functions
@@ -244,7 +244,7 @@
       var aett3 = [tiwaz,birkano,ehwaz,mannaz,lagaz,ingwaz,dagaz,othala]
       // 3x aett1, 2x aett2, 1x aett3
       var deck = [aett1,aett1,aett1,aett2,aett2,aett3]
-      //Flatten the deck to one dimension
+      // Flatten the deck to one dimension
       deck = [].concat.apply([], deck)
       //Now shuffle it
       return shuffleCards(deck);
@@ -267,18 +267,19 @@
     // Callable as a precursor to hand modification: selectRandomCardsInHand, this returns [cards] within hand
 
     function drawCards(numberOfCards,hand,deck){
-      console.log('drawing X cards: ',numberOfCards)
-      console.log('the deck is: ',deck)
+      // console.log('drawing X cards: ',numberOfCards)
+      // console.log('the deck is: ',deck)
       for (var i = 0; i < numberOfCards; i++){
         hand.push(deck.splice(0,1)[0])
+        console.log(deck.length)
       }
-      console.log('this is not the hand', hand)
+      // console.log('this is now the hand', hand)
       return [hand,deck]
     }
 
     //Only to be called when hand is empty
     function drawHand(deck){
-      console.log('about to draw hand, the deck is: ',deck)
+      // console.log('about to draw hand, the deck is: ',deck)
       return drawCards(gameVariables.handSize,[],deck)
     }
 
@@ -329,9 +330,16 @@
 
   // BEGIN 3.3 Playable cards/hand functions
 
+    function runeAettAndIndex(rune){
+      //based on rune number returns the aett it belongs to and index in that aett
+      var runeAett = Math.floor(rune.number / 8)
+      var runeIndex = rune.number % 8
+      return [runeAett,runeIndex]
+    }
+
     //Used to find index location of Runes below and to sides of Runes in aetts 2 and 3
     //Returns [below to left, below to right]
-    function lowerAettLeftRightIndex(i){
+    function runeLeftRightIndex(i){
       var left = null
       var right = null
       if (i - 1 < 0){
@@ -349,69 +357,237 @@
 
     function playableRunes(placedRunes){
       //Runes in the first aett are always playable at first
-      var playableRunes = [
+      var playableRunesArray = [
         [1,1,1,1,1,1,1,1], //first aett
         [0,0,0,0,0,0,0,0], //second aett
         [0,0,0,0,0,0,0,0] //third aett
       ]
       //Runes in second aett are playable if first aett runes in same and +1/-1 index positions completed
       for (var i = 0; i < placedRunes[1].length; i++){
-        var indexSpots = lowerAettLeftRightIndex(i)
+        var indexSpots = runeLeftRightIndex(i)
         var leftSpot = indexSpots[0]
         var rightSpot = indexSpots[1]
         if (placedRunes[0][i] == 1 && placedRunes[0][leftSpot] == 1 && placedRunes[0][rightSpot] == 1){
-          playableRunes[1][i] = 1
+          playableRunesArray[1][i] = 1
         }
       }
       //Runes in third aett are playable if first aett entirely finished and above index pos criteria is met
       var aett1Sum = 0
-      //update sum with for
-      //if sum is 8 then run third aett check
-
-      //Finally, remove already placed runes and left with array of current runes that can be placed
+      for (var i = 0; i < placedRunes[0].length; i++){
+        aett1Sum += placedRunes[0][i]
+      }
+      if (aett1Sum == 8){
+        //Run checks on third aett only if first aett entirely finished
+        //Runes in third aett are playable if second aett runes in same and +1/-1 index positions completed
+        for (var i = 0; i < placedRunes[2].length; i++){
+          var indexSpots = runeLeftRightIndex(i)
+          var leftSpot = indexSpots[0]
+          var rightSpot = indexSpots[1]
+          if (placedRunes[1][i] == 1 && placedRunes[1][leftSpot] == 1 && placedRunes[1][rightSpot] == 1){
+            playableRunesArray[2][i] = 1
+          }
+        }
+      }
+      //Finally, remove already placed runes and we're left with array of current runes that can be placed
+      for (a=0; a<playableRunesArray.length; a++){
+        for (i=0; i<playableRunesArray[a].length; i++){
+          if (placedRunes[a][i] == 1){
+            playableRunesArray[a][i] = 0
+          }
+        }
+      }
+      return playableRunesArray
     }
 
-    function runeAettAndIndex(rune){
-      //based on rune number returns the aett it belongs to and index in that aett
-      return [aett,index]
-    }
-
-    function isHandPlayable(){
-      //for each card in hand check if appears in playableRunes array
-      //this will be nested for loops, try and think of a way to improve this
-
-      //alternatively playableRunes could build a single array of index positions tying to each rune with 1 or 0 values so simply directly lookup value thus only needing single for statement
+    function isHandPlayable(hand,placedRunes){
+      var playableHand = false
+      var playableRunesArray = playableRunes(placedRunes)
+      for (i=0; i < hand.length; i++){
+        var runeLocation = runeAettAndIndex(hand[i])
+        if (playableRunesArray[runeLocation[0]][runeLocation[1]] == 1){
+          playableHand = true
+          break
+        }
+      }
+      return playableHand
     }
   // END 3.3
+
+  // BEGIN 3.4 Active Runes functions
+
+    function anyRunesActive(player){
+      var active = false
+      //check if any of player's placed runes are active
+      console.log('this is the player: ',player)
+      if (player.activeRuneAett1 || player.activeRuneAett2 || player.activeRuneAett3){
+        active = true
+      }
+      return active
+    }
+
+    //Called after a rune is played
+    function isRuneActive(rune,placedRunes){
+      var activateRune = false
+      var runeLocation = runeAettAndIndex(rune)
+      var indexSpots = runeLeftRightIndex(runeLocation[1])
+
+      //Check if index on left AND right of same aett are already played
+      if (placedRunes[runelocation[0]][indexSpots[0]] == 1 && placedRunes[runelocation[0]][indexSpots[1]] == 1){
+        activateRune = true
+      }
+      //Check if first rune of aett to be played
+      else{
+        activateRune = true //here start with default true then if we find another played rune set false
+        for (i=0; i<placedRunes[runeLocation[0]].length; i++){
+          if (i == runeLocation[1]){
+            continue
+          }
+          if (placedRunes[runeLocation[0]][i] == 1){
+            activateRune = false
+            break
+          }
+        }
+      }
+      return activateRune
+    }
+
+  // END 3.4
 // END 3.0
 
 // BEGIN 4.0 Gamesetup and loop functions
 
   function gameInit(){
     //Create deck and hand
-    var p1Deck = initDeck()
-    console.log('this is now the deck: ',p1Deck)
-    var p1HandAndDeck = drawHand(p1Deck)
-    window.p1Hand = p1HandAndDeck[0]
-    window.p1Deck = p1HandAndDeck[1]
-    var p1PlacedRunes = [
-      [0,0,0,0,0,0,0,0], //first aett
-      [0,0,0,0,0,0,0,0], //second aett
-      [0,0,0,0,0,0,0,0] //third aett
-    ]
+    var player1 = {
+      name: 'You',
+      deck: [],
+      hand: [],
+      placedRunes: [
+        [0,0,0,0,0,0,0,0], //first aett
+        [0,0,0,0,0,0,0,0], //second aett
+        [0,0,0,0,0,0,0,0] //third aett
+      ],
+      activeRuneAett1: null,
+      activeRuneAett2: null,
+      activeRuneAett3: null
+    }
+
+    var player2 = {
+      name: 'Computer',
+      deck: [],
+      hand: [],
+      placedRunes: [
+        [0,0,0,0,0,0,0,0], //first aett
+        [0,0,0,0,0,0,0,0], //second aett
+        [0,0,0,0,0,0,0,0] //third aett
+      ],
+      activeRuneAett1: null,
+      activeRuneAett2: null,
+      activeRuneAett3: null
+    }
+
+    function initPlayer(player){
+      player.deck = initDeck()
+      var deckClone = player1.deck.slice(0)
+      console.log('after deck init this is now p1Deck: ', deckClone)
+      player.handAndDeck = drawHand(player.deck)
+      player.hand = player.handAndDeck[0]
+      player.deck = player.handAndDeck[1]
+    }
+
+    initPlayer(player1)
+    initPlayer(player2)
+    console.log('after draw this is now p1Deck: ', player1.deck)
+    console.log('after draw this is now p1Hand: ', player1.hand)
+
+    console.log('hand is playable: ', isHandPlayable(player1.hand,player1.placedRunes))
+
+
+    //KEEP THIS ONLY FOR TESTING PURPOSES
+      // var p1Deck = initDeck()
+      // var p1HandAndDeck = drawHand(p1Deck)
+      // window.p1Hand = p1HandAndDeck[0]
+      // window.p1Deck = p1HandAndDeck[1]
+      // var p1PlacedRunes = [
+      //   [0,0,0,0,0,0,0,0], //first aett
+      //   [0,0,0,0,0,0,0,0], //second aett
+      //   [0,0,0,0,0,0,0,0] //third aett
+      // ]
+
+
     // Pass all these into gameLoop as player objects
-    gameLoop()
+    // gameLoop(player1,player2)
   }
 
-  function gameLoop(){
-    //if no winner begin turn
-    //player actions decision:
-      //1) invoke active rune ability
-      //2) discard any card from hand and draw a card
-      //3) play a card (if possible), play that card and draw a card. check if played card updates active runes
-      //4) if entire hand is not playable, you may discard entire hand redraw 5 cards
-    //check for winner (is third aett complete?)
-    //repeat
+  function gameLoop(player1,player2){
+    var playerWins = false
+    var currentPlayer = null
+
+    //For now function set to always set player1's turn
+    function setPlayerTurn(playerNow){
+      if (playerNow == null){
+        currentPlayer = player1
+        //SET RANDOMLY FOR PRODUCTION
+      } else if (playerNow == player1){
+        // SET THIS FOR PRODUCTION: currentPlayer = player2
+      } else {
+        currentPlayer = player1
+      }
+    }
+
+    setPlayerTurn(currentPlayer)
+    console.log('current player is: ',currentPlayer)
+
+    while (!playerWins){
+      //wait for player action
+        var canActivate = anyRunesActive(currentPlayer)
+        var canPlay = isHandPlayable(currentPlayer.hand,currentPlayer.placedRunes)
+        //1) Player can always discard any card and draw a card
+        if (canActivate){
+          //2) if so player can invoke rune ability
+        }
+        if (canPlay){
+          //3) if so player can play a card
+        } else {
+          //4) may discard entire hand and redraw 5 cards
+
+            // //Discard and update hand and deck
+            // currentPlayer.handAndDeck = discardHand(currentPlayer.hand,currentPlayer.deck)
+            // currentPlayer.hand = currentPlayer.handAndDeck[0]
+            // currentPlayer.deck = currentPlayer.handAndDeck[1]
+
+            // //Redraw and update hand and deck
+            // currentPlayer.handAndDeck = drawHand(currentPlayer.deck)
+            // currentPlayer.hand = currentPlayer.handAndDeck[0]
+            // currentPlayer.deck = currentPlayer.handAndDeck[1]
+        }
+      //If player played a card, draw a card, check if active runes update, check for winner
+        // if (isRuneActive(playedRune,currentPlayer.placedRunes)){
+        //   //update DOM to reflect current active one in same aett no longer active, and now this one is
+        //   //note this could also be factored out in an 'activateRune' function triggered from isRuneActive func
+        //   var runeAett = runeAettAndIndex(rune)[0]
+        //   currentPlayer['activeRuneAett'+runeAett] = playedRune
+        // }
+        //build this out
+      //If no winner after player action, trigger active player function to iterate turn
+      setPlayerTurn(currentPlayer)
+
+      //Setting winner after one turn
+      playerWins = true
+    }
+  }
+
+  function isWinner(placedRunes){
+    var winner = false
+    //If 3rd aett is done there is a winner
+    var aett3Sum = 0
+    for (var i = 0; i < placedRunes[2].length; i++){
+      aett3Sum += placedRunes[2][i]
+    }
+    if (aett3Sum == 8){
+      winner = true
+    }
+    return winner
   }
 // END 4.0
 
@@ -420,33 +596,33 @@
 // END 5.0
 
 // BEGIN 6.0 Dev test functions
-  function devTest_discardCards(numCards){
-    //BUILD discardCards testing function
-    //to test
-    gameInit()
-    var cardsInHand = []
-    for (i = 0; i < p1Hand.length; i++){
-      cardsInHand.push(p1Hand[i].name)
-    }
-    console.log('cards in hand before delete: ',cardsInHand)
-    var cardsToDelete = selectRandomCardsInHand(numCards,p1Hand)
-    var cardsToDeleteNames = []
-    for (i = 0; i < cardsToDelete.length; i++){
-      cardsToDeleteNames.push(cardsToDelete[i].name)
-    }
-    console.log('these are the cards to delete: ',cardsToDeleteNames)
-    var newHandDeck = discardCards(cardsToDelete,p1Hand,p1Deck)
-    //console.log(newHandDeck[0])
-    cardsInHand = []
-    for (i = 0; i < newHandDeck[0].length; i++){
-      cardsInHand.push(newHandDeck[0][i].name)
-    }
-    console.log('cards in hand after delete: ',cardsInHand)
+  // function devTest_discardCards(numCards){
+  //   //BUILD discardCards testing function
+  //   //to test
+  //   gameInit()
+  //   var cardsInHand = []
+  //   for (i = 0; i < p1Hand.length; i++){
+  //     cardsInHand.push(p1Hand[i].name)
+  //   }
+  //   // console.log('cards in hand before delete: ',cardsInHand)
+  //   var cardsToDelete = selectRandomCardsInHand(numCards,p1Hand)
+  //   var cardsToDeleteNames = []
+  //   for (i = 0; i < cardsToDelete.length; i++){
+  //     cardsToDeleteNames.push(cardsToDelete[i].name)
+  //   }
+  //   // console.log('these are the cards to delete: ',cardsToDeleteNames)
+  //   var newHandDeck = discardCards(cardsToDelete,p1Hand,p1Deck)
+  //   //console.log(newHandDeck[0])
+  //   cardsInHand = []
+  //   for (i = 0; i < newHandDeck[0].length; i++){
+  //     cardsInHand.push(newHandDeck[0][i].name)
+  //   }
+  //   // console.log('cards in hand after delete: ',cardsInHand)
 
-    cardsInDeck = []
-    for (i = 0; i < newHandDeck[1].length; i++){
-          cardsInDeck.push(newHandDeck[1][i].name)
-        }
-    console.log('cards in deck after delete: ',cardsInDeck)
-  }
+  //   cardsInDeck = []
+  //   for (i = 0; i < newHandDeck[1].length; i++){
+  //         cardsInDeck.push(newHandDeck[1][i].name)
+  //       }
+  //   //console.log('cards in deck after delete: ',cardsInDeck)
+  // }
 // END 6.0
