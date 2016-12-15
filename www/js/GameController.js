@@ -329,16 +329,51 @@
 
   // BEGIN 3.3 Playable cards/hand functions
 
+    //Used to find index location of Runes below and to sides of Runes in aetts 2 and 3
+    //Returns [below to left, below to right]
+    function lowerAettLeftRightIndex(i){
+      var left = null
+      var right = null
+      if (i - 1 < 0){
+        left = 7
+      } else {
+        left = i -1
+      }
+      if (i + 1 > 7){
+        right = 0
+      } else {
+        right = i + 1
+      }
+      return [left,right]
+    }
+
     function playableRunes(placedRunes){
-      //runes in first aett always playable
-      //runes in second playable if lower aett runes in same position and one on either side completed (+1/-1 index positions)
-      //runes in third playable only once first aett completed AND condition above for second aett is met
+      //Runes in the first aett are always playable at first
+      var playableRunes = [
+        [1,1,1,1,1,1,1,1], //first aett
+        [0,0,0,0,0,0,0,0], //second aett
+        [0,0,0,0,0,0,0,0] //third aett
+      ]
+      //Runes in second aett are playable if first aett runes in same and +1/-1 index positions completed
+      for (var i = 0; i < placedRunes[1].length; i++){
+        var indexSpots = lowerAettLeftRightIndex(i)
+        var leftSpot = indexSpots[0]
+        var rightSpot = indexSpots[1]
+        if (placedRunes[0][i] == 1 && placedRunes[0][leftSpot] == 1 && placedRunes[0][rightSpot] == 1){
+          playableRunes[1][i] = 1
+        }
+      }
+      //Runes in third aett are playable if first aett entirely finished and above index pos criteria is met
+      var aett1Sum = 0
+      //update sum with for
+      //if sum is 8 then run third aett check
 
-      //remove runes that are already placed
+      //Finally, remove already placed runes and left with array of current runes that can be placed
+    }
 
-      //create an array of playable index positions that will correspond with Rune #'s - 1
-
-      //return array similar to PlacedRunes but for playable runes
+    function runeAettAndIndex(rune){
+      //based on rune number returns the aett it belongs to and index in that aett
+      return [aett,index]
     }
 
     function isHandPlayable(){
@@ -360,9 +395,9 @@
     window.p1Hand = p1HandAndDeck[0]
     window.p1Deck = p1HandAndDeck[1]
     var p1PlacedRunes = [
-      0,0,0,0,0,0,0,0, //first aett
-      0,0,0,0,0,0,0,0, //second aett
-      0,0,0,0,0,0,0,0 //third aett
+      [0,0,0,0,0,0,0,0], //first aett
+      [0,0,0,0,0,0,0,0], //second aett
+      [0,0,0,0,0,0,0,0] //third aett
     ]
     // Pass all these into gameLoop as player objects
     gameLoop()
