@@ -1,5 +1,4 @@
 // TO DO LIST:
-// build testing function to test discardCards()
 // finish 3.3
 // finish 4.0 game loop
 //at that point create front end render
@@ -204,7 +203,7 @@
 
     var lagaz = new Rune({
       number: 20,
-      name: 'lagaz',
+      name: 'Lagaz',
       meaning: 'Dreams',
       symbol: 'test',
       text: ''
@@ -299,11 +298,12 @@
     function discardCards(cards,hand,deck){
       //First shuffle the cards to be discarded before placing them on bottom of deck
       cards = shuffleCards(cards)
-      var upperIndexBound = hand.length - 1
+      //console.log('these are shuffled cards to delete: ',cards)
+      var upperIndexBound = hand.length
       //Then go through each card to be discarded
       for (var i = 0; i<cards.length; i++){
         //And check to see if this card appears in the hand
-        for (var j = 0; i < upperIndexBound; j++){
+        for (var j = 0; j < upperIndexBound; j++){
           if (cards[i] == hand[j]){
             //If card is found remove card from hand and add to bottom of the deck
             deck.push(hand.splice(j,1)[0])
@@ -337,6 +337,8 @@
       //remove runes that are already placed
 
       //create an array of playable index positions that will correspond with Rune #'s - 1
+
+      //return array similar to PlacedRunes but for playable runes
     }
 
     function isHandPlayable(){
@@ -358,10 +360,11 @@
     window.p1Hand = p1HandAndDeck[0]
     window.p1Deck = p1HandAndDeck[1]
     var p1PlacedRunes = [
-      [0,0,0,0,0,0,0,0], //first aett
-      [0,0,0,0,0,0,0,0], //second aett
-      [0,0,0,0,0,0,0,0] //third aett
+      0,0,0,0,0,0,0,0, //first aett
+      0,0,0,0,0,0,0,0, //second aett
+      0,0,0,0,0,0,0,0 //third aett
     ]
+    // Pass all these into gameLoop as player objects
     gameLoop()
   }
 
@@ -372,7 +375,7 @@
       //2) discard any card from hand and draw a card
       //3) play a card (if possible), play that card and draw a card. check if played card updates active runes
       //4) if entire hand is not playable, you may discard entire hand redraw 5 cards
-    //check for winner
+    //check for winner (is third aett complete?)
     //repeat
   }
 // END 4.0
@@ -382,12 +385,33 @@
 // END 5.0
 
 // BEGIN 6.0 Dev test functions
-    function devTest_discardCards(){}
+  function devTest_discardCards(numCards){
     //BUILD discardCards testing function
     //to test
-    //reinit p1 hand, print out names of p1Hand
-    //select a number of cards to delete, print out names of cards to delete
-    //check those and only those were deleted by printing out names of cards remaining in hand
-    //need to check when multiple of same cards are in hand
-    //and above AND multiple of same cards to be deleted
+    gameInit()
+    var cardsInHand = []
+    for (i = 0; i < p1Hand.length; i++){
+      cardsInHand.push(p1Hand[i].name)
+    }
+    console.log('cards in hand before delete: ',cardsInHand)
+    var cardsToDelete = selectRandomCardsInHand(numCards,p1Hand)
+    var cardsToDeleteNames = []
+    for (i = 0; i < cardsToDelete.length; i++){
+      cardsToDeleteNames.push(cardsToDelete[i].name)
+    }
+    console.log('these are the cards to delete: ',cardsToDeleteNames)
+    var newHandDeck = discardCards(cardsToDelete,p1Hand,p1Deck)
+    //console.log(newHandDeck[0])
+    cardsInHand = []
+    for (i = 0; i < newHandDeck[0].length; i++){
+      cardsInHand.push(newHandDeck[0][i].name)
+    }
+    console.log('cards in hand after delete: ',cardsInHand)
+
+    cardsInDeck = []
+    for (i = 0; i < newHandDeck[1].length; i++){
+          cardsInDeck.push(newHandDeck[1][i].name)
+        }
+    console.log('cards in deck after delete: ',cardsInDeck)
+  }
 // END 6.0
